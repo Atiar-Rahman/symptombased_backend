@@ -1,5 +1,6 @@
 
 
+from datetime import timedelta
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -17,6 +18,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+# Custom User Model
+AUTH_USER_MODEL = "users.User"
 
 # Application definition
 
@@ -27,10 +30,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'drf_yasg',
     'rest_framework',
+    'djoser',
     'detection',
     "debug_toolbar",
-
+    'users',
 ]
 
 MIDDLEWARE = [
@@ -123,7 +128,39 @@ REST_FRAMEWORK = {
     # or allow read-only access for unauthenticated users.
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny'
-    ]
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
 }
 
+SIMPLE_JWT = {
+    'AUTH_HEADER_TYPES': ('JWT',),
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=12),
+}
 
+# Swagger api authentication setting
+SWAGGER_SETTINGS = {
+   'SECURITY_DEFINITIONS': {
+      'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header',
+            'description':'Enter your JWT token in the format: `JWT <your token>`'
+      }
+   }
+}
+
+# Djoser
+DJOSER = {
+    # 'EMAIL_FRONTEND_PROTOCOL': config('FRONTEND_PROTOCOL'),
+    # 'EMAIL_FRONTEND_DOMAIN': config('FRONTEND_DOMAIN'),
+    # 'EMAIL_FRONTEND_SITE_NAME':'staybangla',
+    # 'PASSWORD_RESET_CONFIRM_URL': 'password/reset/confirm/{uid}/{token}/',
+    # 'ACTIVATION_URL': 'activate/{uid}/{token}/',
+    # 'SEND_ACTIVATION_EMAIL': True,
+    'SERIALIZERS': {
+        'user_create':'users.serializers.UserCreateSerializer',
+        'current_user':'users.serializers.UserSerializer'
+    },
+}
