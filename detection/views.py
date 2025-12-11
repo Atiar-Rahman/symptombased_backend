@@ -6,10 +6,11 @@ from detection.serializers import CancerDetectionSerializer, PredictionRecordSer
 from detection.prediction import predict_lung, predict_liver, predict_breast
 from detection.ml_models.model_loader import breast_model, lung_model, liver_model
 from detection.models import PredictionRecord
+from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
 
 
 class CancerDetectionAPI(APIView):
-
     def post(self, request):
         serializer = CancerDetectionSerializer(data=request.data)
 
@@ -89,3 +90,10 @@ class CancerDetectionAPI(APIView):
             })
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class PredictionRecordView(viewsets.ModelViewSet):
+    queryset  = PredictionRecord.objects.all()
+    serializer_class = PredictionRecordSerializer
+    permission_classes=[IsAuthenticated]
