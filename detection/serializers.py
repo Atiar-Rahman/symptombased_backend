@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from detection.models import PredictionRecord
 
-
 class CancerDetectionSerializer(serializers.Serializer):
     age = serializers.IntegerField()
     gender = serializers.CharField()
@@ -34,9 +33,6 @@ class CancerDetectionSerializer(serializers.Serializer):
     cholesterol_level = serializers.IntegerField()
     hypertension = serializers.IntegerField()
     asthma = serializers.IntegerField()
-
-
-
 
 class PredictionRecordSerializer(serializers.ModelSerializer):
     class Meta:

@@ -9,21 +9,17 @@ from detection.models import PredictionRecord
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 
+
+
 class CancerDetectionAPI(APIView):
-    # permission_classes = [IsAuthenticated]
 
     def post(self, request):
         serializer = CancerDetectionSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
 
-        if not all([breast_model, liver_model, lung_model]):
-            return Response(
-                {"error": "ML models not loaded"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+        if serializer.is_valid():
+            data = serializer.validated_data
 
-        try:
+            # Breast mapping
             breast_features = {
                 "Age": data["age"],
                 "Gender": data["gender"].upper(),
@@ -31,13 +27,16 @@ class CancerDetectionAPI(APIView):
                 "Protein2": data["protein2"],
                 "Protein3": data["protein3"],
                 "Protein4": data["protein4"],
-                "Tumour_Stage": data["tumour_stage"],
+                "Tumour_Stage": data["tumour_stage"].upper(),
                 "Histology": data["histology"],
                 "ER status": data["er_status"],
                 "PR status": data["pr_status"],
                 "HER2 status": data["her2_status"],
             }
 
+            breast_result = predict_breast(breast_model, breast_features)
+
+            # Liver mapping
             liver_features = {
                 "Age": data["age"],
                 "Gender": 1 if data["gender"].upper() == "MALE" else 0,
@@ -51,9 +50,12 @@ class CancerDetectionAPI(APIView):
                 "Albumin_and_Globulin_Ratio": data["albumin_and_globulin_ratio"],
             }
 
+            liver_result = predict_liver(liver_model, liver_features)
+
+            # Lung
             lung_features = {
                 "age": data["age"],
-                "gender": data["gender"],
+                "gender": data["gender"].title(),
                 "family_history": data["family_history"],
                 "smoking_status": data["smoking_status"],
                 "bmi": data["bmi"],
@@ -62,39 +64,18 @@ class CancerDetectionAPI(APIView):
                 "asthma": data["asthma"],
             }
 
-            breast_result = predict_breast(breast_model, breast_features)
-            liver_result = predict_liver(liver_model, liver_features)
             lung_result = predict_lung(lung_model, lung_features)
 
-            record = PredictionRecord.objects.create(
-                age=data["age"],
-                gender=data["gender"],
-
-                breast_probability=breast_result["cancer_probability"],
-                breast_diagnosis=breast_result["final_diagnosis"],
-                breast_class=breast_result["prediction_class"],
-
-                liver_probability=liver_result["cancer_probability"],
-                liver_diagnosis=liver_result["final_diagnosis"],
-                liver_class=liver_result["prediction_class"],
-
-                lung_probability=lung_result["cancer_probability"],
-                lung_diagnosis=lung_result["final_diagnosis"],
-                lung_class=lung_result["prediction_class"],
-            )
-
-            return Response({
-                "breast": breast_result,
-                "liver": liver_result,
-                "lung": lung_result,
-                "record_id": record.id,
-            })
-
-        except Exception as e:
             return Response(
-                {"error": "Prediction failed", "details": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {
+                    "breast_cancer": breast_result,
+                    "liver_cancer": liver_result,
+                    "lung_cancer": lung_result,
+                },
+                status=status.HTTP_200_OK,
             )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class PredictionRecordView(viewsets.ModelViewSet):
