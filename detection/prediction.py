@@ -2,9 +2,9 @@ import pandas as pd
 from detection.ml_models.model_loader import breast_model, lung_model, liver_model
 
 
-print("Breast model:", breast_model)
-print("Liver model:", liver_model)
-print("Lung model:", lung_model)
+# print("Breast model:", breast_model)
+# print("Liver model:", liver_model)
+# print("Lung model:", lung_model)
 
 def predict_lung(model, features):
     df = pd.DataFrame([features])

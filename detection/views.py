@@ -9,15 +9,21 @@ from detection.models import PredictionRecord
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 
-
 class CancerDetectionAPI(APIView):
+    # permission_classes = [IsAuthenticated]
+
     def post(self, request):
         serializer = CancerDetectionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
 
-        if serializer.is_valid():
-            data = serializer.validated_data
+        if not all([breast_model, liver_model, lung_model]):
+            return Response(
+                {"error": "ML models not loaded"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
-            # breast
+        try:
             breast_features = {
                 "Age": data["age"],
                 "Gender": data["gender"].upper(),
@@ -32,9 +38,6 @@ class CancerDetectionAPI(APIView):
                 "HER2 status": data["her2_status"],
             }
 
-            breast_result = predict_breast(breast_model, breast_features)
-
-            # liver
             liver_features = {
                 "Age": data["age"],
                 "Gender": 1 if data["gender"].upper() == "MALE" else 0,
@@ -48,9 +51,6 @@ class CancerDetectionAPI(APIView):
                 "Albumin_and_Globulin_Ratio": data["albumin_and_globulin_ratio"],
             }
 
-            liver_result = predict_liver(liver_model, liver_features)
-
-            # lung
             lung_features = {
                 "age": data["age"],
                 "gender": data["gender"],
@@ -62,9 +62,10 @@ class CancerDetectionAPI(APIView):
                 "asthma": data["asthma"],
             }
 
+            breast_result = predict_breast(breast_model, breast_features)
+            liver_result = predict_liver(liver_model, liver_features)
             lung_result = predict_lung(lung_model, lung_features)
 
-            # save prediction
             record = PredictionRecord.objects.create(
                 age=data["age"],
                 gender=data["gender"],
@@ -89,11 +90,22 @@ class CancerDetectionAPI(APIView):
                 "record_id": record.id,
             })
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+        except Exception as e:
+            return Response(
+                {"error": "Prediction failed", "details": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class PredictionRecordView(viewsets.ModelViewSet):
     queryset  = PredictionRecord.objects.all()
     serializer_class = PredictionRecordSerializer
     permission_classes=[IsAuthenticated]
+
+
+
+
+
+class Home(APIView):
+    def get(self, request):
+        return Response({"status": "running"})
