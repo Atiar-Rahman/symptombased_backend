@@ -18,7 +18,7 @@ DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
-CSRF_TRUSTED_ORIGINS = ['https://*.onrender.com','http://127.0.0.1:8000']
+CSRF_TRUSTED_ORIGINS = ['https://*.onrender.com','http://127.0.0.1:8000', "http://localhost:5173",]
 CORS_ALLOW_ALL_ORIGINS = True
 # Custom User Model
 AUTH_USER_MODEL = "users.User"
